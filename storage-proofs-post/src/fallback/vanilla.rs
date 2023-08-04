@@ -35,7 +35,7 @@ pub struct SetupParams {
     pub api_version: ApiVersion,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublicParams {
     /// Size of the sector in bytes.
     pub sector_size: u64,
@@ -167,7 +167,7 @@ impl<P: MerkleProofTrait> SectorProof<P> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FallbackPoSt<'a, Tree>
 where
     Tree: MerkleTreeTrait,

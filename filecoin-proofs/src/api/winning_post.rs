@@ -183,11 +183,11 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     println!("jkl:  pub_params {:?}", &pub_params);
     println!("jkl:  pub_inputs {:?}", &pub_inputs);
     println!("jkl:  priv_inputs {:?}", &priv_inputs);
-    // let jpubparams = json!(&pub_params).to_string();
-    // let jpubinputs = json!(&pub_inputs).to_string();
-    // let jprivinputs = json!(&priv_inputs).to_string();
-    // println!("jkl:  pub_params json {:?}", &jpubparams);
-    // println!("jkl:  pub_params json {:?}", &jpubinputs);
+    let jpubparams = json!(&pub_params).to_string();
+    let jpubinputs = json!(&pub_inputs).to_string();
+    // // let jprivinputs = json!(&priv_inputs).to_string();
+    println!("jkl:  pub_params json {:?}", &jpubparams);
+    println!("jkl:  pub_inputs json {:?}", &jpubinputs);
     // println!("jkl:  pub_params json {:?}", &jprivinputs);
     
 

@@ -12,6 +12,8 @@ use storage_proofs_post::fallback::{
     PublicSector,
 };
 
+use serde_json::json;
+
 use crate::{
     api::{as_safe_commitment, partition_vanilla_proofs},
     caches::{get_post_params, get_post_verifying_key},
@@ -127,7 +129,10 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     };
     let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
         FallbackPoStCompound::setup(&setup_params)?;
+    // let groth_params = get_post_params::<Tree>(post_config)?;
+        println!("asdf:  post_config {:?}", &post_config);
     let groth_params = get_post_params::<Tree>(post_config)?;
+
 
     let trees = replicas
         .iter()
@@ -173,6 +178,18 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     let priv_inputs = fallback::PrivateInputs::<Tree> {
         sectors: &priv_sectors,
     };
+
+    println!("asdf:  winning post, generate_winning_post");
+    // println!("asdf:  pub_params {:?}", &pub_params);
+    // println!("asdf:  pub_inputs {:?}", &pub_inputs);
+    println!("asdf:  priv_inputs {:?}", &priv_inputs);
+    let jpubparams = json!(&pub_params).to_string();
+    let jpubinputs = json!(&pub_inputs).to_string();
+    // let jprivinputs = json!(&priv_inputs).to_string();
+    println!("asdf:  pub_params json {:?}", &jpubparams);
+    println!("asdf:  pub_params json {:?}", &jpubinputs);
+    // println!("asdf:  pub_params json {:?}", &jprivinputs);
+    
 
     let proof =
         FallbackPoStCompound::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs, &groth_params)?;

@@ -138,6 +138,7 @@ impl<H: Hasher, Arity: 'static + PoseidonArity> SubPath<H, Arity> {
         mut cur: AllocatedNum<Fr>,
     ) -> Result<(AllocatedNum<Fr>, Vec<Boolean>), SynthesisError> {
         let arity = Arity::to_usize();
+        // println!("** ** ** self.path.len() {}", self.path.len());
 
         if arity == 0 {
             // Nothing to do here.

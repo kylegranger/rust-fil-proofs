@@ -6,12 +6,16 @@ use bellperson::{
             aggregate_proofs, verify_aggregate_proof, AggregateProof, ProverSRS, VerifierSRS,
         },
         create_random_proof_batch, create_random_proof_batch_in_priority, verify_proofs_batch,
-        PreparedVerifyingKey,
+        PreparedVerifyingKey, MappedParameters,
     },
     Circuit,
 };
 use blstrs::{Bls12, Scalar as Fr};
 use log::info;
+
+use std::path::Path;
+use serde_json::json;
+use serde::{Serialize, Deserialize};
 use rand::{rngs::OsRng, RngCore};
 use rayon::prelude::{
     IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
@@ -33,7 +37,14 @@ pub struct SetupParams<'a, S: ProofScheme<'a>> {
     pub priority: bool,
 }
 
-#[derive(Clone)]
+
+#[derive(Default, Clone, Serialize, Deserialize, Debug)]
+pub struct FilecoinDeployment {
+    pub circuits: String,
+    pub groth_params: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
 pub struct PublicParams<'a, S: ProofScheme<'a>> {
     pub vanilla_params: S::PublicParams,
     pub partitions: Option<usize>,
@@ -85,6 +96,7 @@ where
         groth_params: &'b groth16::MappedParameters<Bls12>,
     ) -> Result<MultiProof<'b>> {
         let partition_count = Self::partition_count(pub_params);
+        println!("asdf: prove, in compound_proof.rs");
 
         // This will always run at least once, since there cannot be zero partitions.
         ensure!(partition_count > 0, "There must be partitions");
@@ -225,6 +237,33 @@ where
         Ok(res)
     }
 
+
+    fn write_to_file(deployment_file: impl AsRef<Path>, circuits: &Vec<C>, groth_params: &MappedParameters<Bls12>) {
+        // println!("write_to_file: {:?}", &circuit_file.as_ref().display());
+        // let file = std::fs::read(circuit_file).map_err(|_| GevulotError::ErrorIo)?;
+        // println!("  read in {} bytes", file.len());
+        // let r1cs = general_purpose::STANDARD_NO_PAD.encode(&file);
+    
+        // let created = SystemTime::now()
+        //     .duration_since(UNIX_EPOCH)
+        //     .unwrap()
+        //     .as_millis() as u64;
+    
+        // let program_id = Uuid::new_v4();
+        // println!("  program id: {:?}", program_id);
+        // let program_path = format!("deployments/{program_id}.json");
+        // println!("  program path: {}", program_path);
+        // FilecoinDeployment
+        // let tempo = json!(groth_params);
+        let deployment = json!(FilecoinDeployment { 
+            circuits: "this is the circuits string".to_owned(), 
+            groth_params: "this is the groth params".to_owned() }).to_string();
+        // let program = format!("this is it");
+        println!("  deployment len: {}", deployment.len());
+        std::fs::write(deployment_file, deployment).unwrap();
+        // Ok(program_id.to_string())
+    }
+
     /// circuit_proof creates and synthesizes a circuit from concrete params/inputs, then generates a
     /// groth proof from it. It returns a groth proof.
     /// circuit_proof is used internally and should neither be called nor implemented outside of
@@ -236,6 +275,7 @@ where
         groth_params: &groth16::MappedParameters<Bls12>,
         priority: bool,
     ) -> Result<Vec<groth16::Proof<Bls12>>> {
+        println!("asdf: circuit_proofs");
         let mut rng = OsRng;
         ensure!(
             !vanilla_proofs.is_empty(),
@@ -256,11 +296,17 @@ where
             })
             .collect::<Result<Vec<_>>>()?;
 
+
+
         let groth_proofs = if priority {
+            println!("asdf: go into bellperson land");
+            Self::write_to_file("fc-groth16-test.json", &circuits, &groth_params);
             create_random_proof_batch_in_priority(circuits, groth_params, &mut rng)?
         } else {
             create_random_proof_batch(circuits, groth_params, &mut rng)?
         };
+        println!("asdf: back from bellperson land");
+
 
         groth_proofs
             .into_iter()

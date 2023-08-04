@@ -4,8 +4,9 @@ use std::str::FromStr;
 
 use anyhow::{format_err, Error, Result};
 use semver::Version;
+use serde::Serialize;
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Serialize)]
 pub enum ApiVersion {
     V1_0_0,
     V1_1_0,

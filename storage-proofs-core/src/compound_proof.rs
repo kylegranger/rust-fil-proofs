@@ -96,7 +96,7 @@ where
         groth_params: &'b groth16::MappedParameters<Bls12>,
     ) -> Result<MultiProof<'b>> {
         let partition_count = Self::partition_count(pub_params);
-        println!("asdf: prove, in compound_proof.rs");
+        println!("jkl: prove, in compound_proof.rs");
 
         // This will always run at least once, since there cannot be zero partitions.
         ensure!(partition_count > 0, "There must be partitions");
@@ -275,7 +275,7 @@ where
         groth_params: &groth16::MappedParameters<Bls12>,
         priority: bool,
     ) -> Result<Vec<groth16::Proof<Bls12>>> {
-        println!("asdf: circuit_proofs");
+        println!("jkl: circuit_proofs");
         let mut rng = OsRng;
         ensure!(
             !vanilla_proofs.is_empty(),
@@ -299,13 +299,13 @@ where
 
 
         let groth_proofs = if priority {
-            println!("asdf: go into bellperson land");
+            println!("jkl: go into bellperson land");
             Self::write_to_file("fc-groth16-test.json", &circuits, &groth_params);
             create_random_proof_batch_in_priority(circuits, groth_params, &mut rng)?
         } else {
             create_random_proof_batch(circuits, groth_params, &mut rng)?
         };
-        println!("asdf: back from bellperson land");
+        println!("jkl: back from bellperson land");
 
 
         groth_proofs

@@ -129,8 +129,7 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     };
     let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
         FallbackPoStCompound::setup(&setup_params)?;
-    // let groth_params = get_post_params::<Tree>(post_config)?;
-        println!("asdf:  post_config {:?}", &post_config);
+    println!("asdf:  post_config {:?}", &post_config);
     let groth_params = get_post_params::<Tree>(post_config)?;
 
 

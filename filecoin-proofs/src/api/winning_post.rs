@@ -1,6 +1,13 @@
 use anyhow::{ensure, Context, Result};
 use filecoin_hashers::Hasher;
 use log::info;
+use merkletree::merkle::MerkleTree;
+
+use merkletree::hash::{Algorithm, Hashable};
+use merkletree::merkle::Element;
+use merkletree::store::{DiskStore, LevelCacheStore, Store, StoreConfig};
+use typenum::Unsigned;
+
 use storage_proofs_core::{
     compound_proof::{self, CompoundProof},
     merkle::MerkleTreeTrait,
@@ -24,6 +31,25 @@ use crate::{
     },
     PoStType,
 };
+
+/// Utilities
+pub fn serialize_tree<E: Element, A: Algorithm<E>, S: Store<E>, U: Unsigned>(
+    tree: MerkleTree<E, A, S, U>,
+) -> Vec<u8> {
+    let data = tree.data().expect("can't get tree's data [serialize_tree]");
+    let data: Vec<E> = data
+        .read_range(0..data.len())
+        .expect("can't read actual data [serialize_tree]");
+    let mut serialized_tree = vec![0u8; E::byte_len() * data.len()];
+    let mut start = 0;
+    let mut end = E::byte_len();
+    for element in data {
+        element.copy_to_slice(&mut serialized_tree[start..end]);
+        start += E::byte_len();
+        end += E::byte_len();
+    }
+    serialized_tree
+}
 
 /// Generates a Winning proof-of-spacetime with provided vanilla proofs.
 pub fn generate_winning_post_with_vanilla<Tree: 'static + MerkleTreeTrait>(
@@ -96,6 +122,8 @@ pub fn generate_winning_post_with_vanilla<Tree: 'static + MerkleTreeTrait>(
     Ok(proof)
 }
 
+
+
 /// Generates a Winning proof-of-spacetime.
 pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     post_config: &PoStConfig,
@@ -129,7 +157,12 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     };
     let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
         FallbackPoStCompound::setup(&setup_params)?;
-    println!("asdf:  post_config {:?}", &post_config);
+
+    let jpost_config = json!(&post_config).to_string();
+    info!("momo:  jpost_config {:?}", &jpost_config);
+    info!("momo:  replicas {:?}", replicas);
+
+
     let groth_params = get_post_params::<Tree>(post_config)?;
 
 
@@ -143,10 +176,12 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
                 })
         })
         .collect::<Result<Vec<_>>>()?;
+    // info!("\n\n\nmomo: trees len {}", trees.len());
 
     let mut pub_sectors = Vec::with_capacity(param_sector_count);
     let mut priv_sectors = Vec::with_capacity(param_sector_count);
 
+    // println!("momo: param_sector_count {}", param_sector_count);
     for _ in 0..param_sector_count {
         for ((sector_id, replica), tree) in replicas.iter().zip(trees.iter()) {
             let comm_r = replica.safe_comm_r().with_context(|| {
@@ -154,6 +189,12 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
             })?;
             let comm_c = replica.safe_comm_c();
             let comm_r_last = replica.safe_comm_r_last();
+            let jcomm_c = json!(&comm_c).to_string();
+            // info!("momo:  jcomm_c {:?}", &jcomm_c);
+            let jcomm_r_last = json!(&comm_r_last).to_string();
+            // info!("momo:  jcomm_r_last {:?}", &jcomm_r_last);
+            // let serialize_tree = serialize_tree(tree.inner);
+
 
             pub_sectors.push(PublicSector::<<Tree::Hasher as Hasher>::Domain> {
                 id: *sector_id,
@@ -167,6 +208,29 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
         }
     }
 
+    // let tree = priv_sectors[0].tree;
+    // let data = tree.data().expect("can't get tree's data [serialize_tree]");
+    // println!("momo:  data  {:?}", data);
+    // println!("momo:  leafs {:?}", tree.leafs());
+    // println!("momo:  root {:?}", tree.root());
+    // println!("momo:  len {:?}", tree.len());
+    // println!("momo:  row_count {:?}", tree.row_count());
+    // let data: Vec<Element> = data
+    //     .read_range(0..data.len())
+    //     .expect("can't read actual data [serialize_tree]");
+    // let mut serialized_tree = vec![0u8; Element::byte_len() * data.len()];
+    // let mut start = 0;
+    // let mut end = Element::byte_len();
+    // for element in data {
+    //     element.copy_to_slice(&mut serialized_tree[start..end]);
+    //     start += Element::byte_len();
+    //     end += Element::byte_len();
+    // }
+    // println!("momo:  serialized tree len {}", serialized_tree.len());
+    // serialized_tree
+
+
+
     let pub_inputs = fallback::PublicInputs::<<Tree::Hasher as Hasher>::Domain> {
         randomness: randomness_safe,
         prover_id: prover_id_safe,
@@ -178,16 +242,16 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
         sectors: &priv_sectors,
     };
 
-    info!("asdf:  winning post, generate_winning_post");
-    info!("asdf:  pub_params {:?}", &pub_params);
-    info!("asdf:  pub_inputs {:?}", &pub_inputs);
-    info!("asdf:  priv_inputs {:?}", &priv_inputs);
+    // info!("asdf:  winning post, generate_winning_post");
+    // info!("asdf:  pub_params {:?}", &pub_params);
+    // info!("asdf:  pub_inputs {:?}", &pub_inputs);
+    info!("\n\n\nmomo:  priv_inputs {:?}\n\n\n", &priv_inputs);
     // println!("asdf:  groth_params {:?}", &groth_params);
 
-    // let jpubparams = json!(&pub_params).to_string();
-    // let jpubinputs = json!(&pub_inputs).to_string();
-    // info!("asdf:  pub_params json {:?}", &jpubparams);
-    // info!("asdf:  pub_inputs json {:?}", &jpubinputs);
+    let jpubparams = json!(&pub_params).to_string();
+    let jpubinputs = json!(&pub_inputs).to_string();
+    info!("oranj:  pub_params json {:?}", &jpubparams);
+    info!("oranj:  pub_inputs json {:?}", &jpubinputs);
 
     // let jprivinputs = json!(&priv_inputs).to_string();
     // println!("asdf:  priv_inputs json {:?}", &jprivinputs);

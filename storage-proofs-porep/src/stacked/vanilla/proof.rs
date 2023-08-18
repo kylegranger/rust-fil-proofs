@@ -1135,7 +1135,7 @@ impl<'a, Tree: 'static + MerkleTreeTrait, G: 'static + Hasher> StackedDrg<'a, Tr
 
                         // If we get here, this is a final leaf batch: build a sub-tree.
                         info!(
-                            "building base tree_r_last with GPU {}/{}",
+                            "building base tree_r_last A with GPU {}/{}",
                             i + 1,
                             tree_count
                         );
@@ -1229,7 +1229,7 @@ impl<'a, Tree: 'static + MerkleTreeTrait, G: 'static + Hasher> StackedDrg<'a, Tr
                 };
 
             info!(
-                "building base tree_r_last with CPU {}/{}",
+                "building base tree_r_last B with CPU {}/{}",
                 i + 1,
                 tree_count
             );
@@ -1600,7 +1600,7 @@ impl<'a, Tree: 'static + MerkleTreeTrait, G: 'static + Hasher> StackedDrg<'a, Tr
 
                     // If we get here, this is a final leaf batch: build a sub-tree.
                     info!(
-                        "building base tree_r_last with GPU {}/{}",
+                        "building base tree_r_last C with GPU {}/{}",
                         i + 1,
                         tree_count
                     );
@@ -1649,7 +1649,7 @@ impl<'a, Tree: 'static + MerkleTreeTrait, G: 'static + Hasher> StackedDrg<'a, Tr
                 let encoded_data = vec![<Tree::Hasher as Hasher>::Domain::default(); nodes_count];
 
                 info!(
-                    "building base tree_r_last with CPU {}/{}",
+                    "building base tree_r_last D with CPU {}/{}",
                     i + 1,
                     tree_count
                 );
@@ -1692,7 +1692,7 @@ impl<'a, Tree: 'static + MerkleTreeTrait, G: 'static + Hasher> StackedDrg<'a, Tr
             let encoded_data = vec![<Tree::Hasher as Hasher>::Domain::default(); nodes_count];
 
             info!(
-                "building base tree_r_last with CPU {}/{}",
+                "building base tree_r_last E with CPU {}/{}",
                 i + 1,
                 tree_count
             );
@@ -1723,6 +1723,7 @@ impl<'a, Tree: 'static + MerkleTreeTrait, G: 'static + Hasher> StackedDrg<'a, Tr
         assert_eq!(0, sector_size % NODE_SIZE);
         let tree_count = get_base_tree_count::<Tree>();
         let nodes_count = leaf_count / tree_count;
+        println!("treer: E");
 
         let config = StoreConfig::new(
             cache_path.as_ref(),

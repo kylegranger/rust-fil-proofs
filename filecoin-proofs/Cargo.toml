@@ -26,7 +26,7 @@ bellperson = { path = "/home/ader/dev/ader/bellperson-0.25.0" }
 log = "0.4.7"
 rayon = "1.1.0"
 hex = "0.4.0"
-merkletree = "0.23.0"
+merkletree = { path = "/home/ader/dev/ader/merkletree-0.23.0" }
 bincode = "1.1.2"
 anyhow = "1.0.23"
 sha2 = "0.10.2"
@@ -38,6 +38,7 @@ once_cell = "1.8.0"
 blstrs = "0.7.0"
 ff = { version = "0.13.0", default-features = false }
 iowrap = "0.2.1"
+base64 = "0.21.2"
 
 [dev-dependencies]
 criterion = "0.3"

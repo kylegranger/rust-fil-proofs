@@ -137,6 +137,9 @@ pub fn generate_window_post<Tree: 'static + MerkleTreeTrait>(
         })
         .collect::<Result<_>>()?;
 
+
+
+
     let mut pub_sectors = Vec::with_capacity(sector_count);
     let mut priv_sectors = Vec::with_capacity(sector_count);
 
@@ -169,7 +172,7 @@ pub fn generate_window_post<Tree: 'static + MerkleTreeTrait>(
         sectors: &priv_sectors,
     };
 
-    let proof = FallbackPoStCompound::prove(&pub_params, &pub_inputs, &priv_inputs, &groth_params)?;
+    let (proof, _) = FallbackPoStCompound::prove(&pub_params, &pub_inputs, &priv_inputs, &groth_params)?;
 
     info!("generate_window_post:finish");
 

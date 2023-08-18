@@ -63,22 +63,23 @@ pub fn create_lc_tree<Tree: MerkleTreeTrait>(
     replica_config: &ReplicaConfig,
 ) -> Result<LCTree<Tree::Hasher, Tree::Arity, Tree::SubTreeArity, Tree::TopTreeArity>> {
     let base_tree_leafs = get_merkle_tree_leafs(base_tree_len, Tree::Arity::to_usize())?;
-
+    println!("jkl: create_lc_tree");
     if Tree::TopTreeArity::to_usize() > 0 {
         ensure!(
             Tree::SubTreeArity::to_usize() > 0,
             "Invalid top arity specified without sub arity"
         );
-
+        println!("jkl: A");
         LCTree::from_sub_tree_store_configs_and_replica(base_tree_leafs, configs, replica_config)
     } else if Tree::SubTreeArity::to_usize() > 0 {
         ensure!(
             !configs.is_empty(),
             "Cannot create sub-tree with a single tree config"
         );
-
+        println!("jkl: B");
         LCTree::from_store_configs_and_replica(base_tree_leafs, configs, replica_config)
     } else {
+        println!("jkl: C");
         ensure!(configs.len() == 1, "Invalid tree-shape specified");
         let store = LevelCacheStore::new_from_disk_with_reader(
             base_tree_len,

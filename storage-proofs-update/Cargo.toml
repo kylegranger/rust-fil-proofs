@@ -12,7 +12,8 @@ readme = "README.md"
 storage-proofs-core = { path = "../storage-proofs-core", version = "~15.0.0", default-features = false}
 storage-proofs-porep = { path = "../storage-proofs-porep", version = "~15.0.0", default-features = false}
 filecoin-hashers = { path = "../filecoin-hashers", version = "~10.0.0", default-features = false, features = ["poseidon", "sha256"]}
-merkletree = "0.23.0"
+merkletree = { path = "/home/ader/dev/ader/merkletree-0.23.0" }
+
 rayon = "1.0.0"
 serde = { version = "1.0", features = ["derive"]}
 ff = "0.13.0"

@@ -64,6 +64,7 @@ fn get_tree_r_last_root(
     configs: &[StoreConfig],
     replica_config: &ReplicaConfig,
 ) -> Result<DefaultTreeDomain> {
+    println!("jkl: get tree r last root");
     let base_tree_len = get_merkle_tree_len(base_tree_leafs, OCT_ARITY)?;
     let tree_r_last_root = if is_sector_shape_base(sector_size) {
         ensure!(configs.len() == 1, "Invalid tree-shape specified");

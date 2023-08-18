@@ -656,7 +656,7 @@ pub fn generate_empty_sector_update_proof<Tree: 'static + MerkleTreeTrait<Hasher
     let pub_params_compound = EmptySectorUpdateCompound::<Tree>::setup(&setup_params_compound)?;
 
     let groth_params = get_empty_sector_update_params::<Tree>(porep_config)?;
-    let multi_proof = EmptySectorUpdateCompound::prove(
+    let (multi_proof, _) = EmptySectorUpdateCompound::prove(
         &pub_params_compound,
         &public_inputs,
         &private_inputs,

@@ -142,6 +142,8 @@ impl<Tree: 'static + MerkleTreeTrait> PrivateReplicaInfo<Tree> {
     > {
         let base_tree_size = get_base_tree_size::<Tree>(sector_size)?;
         let base_tree_leafs = get_base_tree_leafs::<Tree>(base_tree_size)?;
+        println!("obi: base_tree_size {}", base_tree_size);
+        println!("obi: base_tree_leafs {}", base_tree_leafs);
         trace!(
             "post: base tree size {}, base tree leafs {}, rows_to_discard {}, arities [{}, {}, {}]",
             base_tree_size,
@@ -151,15 +153,18 @@ impl<Tree: 'static + MerkleTreeTrait> PrivateReplicaInfo<Tree> {
             Tree::SubTreeArity::to_usize(),
             Tree::TopTreeArity::to_usize(),
         );
-
+        println!("treer: C");
         let mut config = StoreConfig::new(
             self.cache_dir_path(),
             CacheKey::CommRLastTree.to_string(),
             default_rows_to_discard(base_tree_leafs, Tree::Arity::to_usize()),
         );
         config.size = Some(base_tree_size);
+        println!("obi: config {:?}", &config);
+
 
         let tree_count = get_base_tree_count::<Tree>();
+        println!("obi: tree_count {:?}", tree_count);
         let (configs, replica_config) = split_config_and_replica(
             config,
             self.replica_path().to_path_buf(),

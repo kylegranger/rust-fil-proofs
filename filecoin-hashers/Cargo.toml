@@ -12,7 +12,7 @@ readme = "README.md"
 bellperson = { path = "/home/ader/dev/ader/bellperson-0.25.0" }
 blstrs = "0.7.0"
 generic-array = "0.14.4"
-merkletree = "0.23.0"
+merkletree = { path = "/home/ader/dev/ader/merkletree-0.23.0" }
 ff = "0.13.0"
 anyhow = "1.0.34"
 serde = "1.0.117"

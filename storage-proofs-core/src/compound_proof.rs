@@ -6,16 +6,16 @@ use bellperson::{
             aggregate_proofs, verify_aggregate_proof, AggregateProof, ProverSRS, VerifierSRS,
         },
         create_random_proof_batch, create_random_proof_batch_in_priority, verify_proofs_batch,
-        PreparedVerifyingKey, MappedParameters,
+        PreparedVerifyingKey,
     },
     Circuit,
 };
 use blstrs::{Bls12, Scalar as Fr};
 use log::info;
 
-use std::path::Path;
+
 use serde_json::json;
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 use rand::{rngs::OsRng, RngCore};
 use rayon::prelude::{
     IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
@@ -38,11 +38,6 @@ pub struct SetupParams<'a, S: ProofScheme<'a>> {
 }
 
 
-#[derive(Default, Clone, Serialize, Deserialize, Debug)]
-pub struct FilecoinDeployment {
-    pub circuits: String,
-    pub groth_params: String,
-}
 
 #[derive(Clone, Debug, Serialize)]
 pub struct PublicParams<'a, S: ProofScheme<'a>> {
@@ -94,10 +89,11 @@ where
         pub_in: &S::PublicInputs,
         priv_in: &S::PrivateInputs,
         groth_params: &'b groth16::MappedParameters<Bls12>,
-    ) -> Result<MultiProof<'b>> {
+    ) -> Result<(MultiProof<'b>, String)> {
         let partition_count = Self::partition_count(pub_params);
-        println!("asdf: prove, in compound_proof.rs");
-
+        info!("asdf: prove, in compound_proof.rs");
+        // let jpubparams = json!(&pub_params as ).to_string();
+        // let jpubinputs = json!(&pub_in).to_string();
         // This will always run at least once, since there cannot be zero partitions.
         ensure!(partition_count > 0, "There must be partitions");
 
@@ -105,13 +101,18 @@ where
         let vanilla_proofs =
             S::prove_all_partitions(&pub_params.vanilla_params, pub_in, priv_in, partition_count)?;
 
+        let jvanilla_proofs = json!(&vanilla_proofs).to_string();
         info!("vanilla_proofs:finish");
+        info!("oranj: jvanilla_proofs {:?}", jvanilla_proofs);
 
         let sanity_check =
             S::verify_all_partitions(&pub_params.vanilla_params, pub_in, &vanilla_proofs)?;
         ensure!(sanity_check, "sanity check failed");
-
-        info!("snark_proof:start");
+    // if partition_count > 0 {
+    //     panic!("XXX-002");
+    // }
+    // info!("asdf: vanilla_proofs {:?}", vanilla_proofs);
+    info!("snark_proof:start");
         let groth_proofs = Self::circuit_proofs(
             pub_in,
             vanilla_proofs,
@@ -121,7 +122,7 @@ where
         )?;
         info!("snark_proof:finish");
 
-        Ok(MultiProof::new(groth_proofs, &groth_params.pvk))
+        Ok((MultiProof::new(groth_proofs, &groth_params.pvk), jvanilla_proofs))
     }
 
     fn prove_with_vanilla<'b>(
@@ -238,31 +239,31 @@ where
     }
 
 
-    fn write_to_file(deployment_file: impl AsRef<Path>, circuits: &Vec<C>, groth_params: &MappedParameters<Bls12>) {
-        // println!("write_to_file: {:?}", &circuit_file.as_ref().display());
-        // let file = std::fs::read(circuit_file).map_err(|_| GevulotError::ErrorIo)?;
-        // println!("  read in {} bytes", file.len());
-        // let r1cs = general_purpose::STANDARD_NO_PAD.encode(&file);
+    // fn write_to_file(deployment_file: impl AsRef<Path>, circuits: &Vec<C>, groth_params: &MappedParameters<Bls12>) {
+    //     // println!("write_to_file: {:?}", &circuit_file.as_ref().display());
+    //     // let file = std::fs::read(circuit_file).map_err(|_| GevulotError::ErrorIo)?;
+    //     // println!("  read in {} bytes", file.len());
+    //     // let r1cs = general_purpose::STANDARD_NO_PAD.encode(&file);
 
-        // let created = SystemTime::now()
-        //     .duration_since(UNIX_EPOCH)
-        //     .unwrap()
-        //     .as_millis() as u64;
+    //     // let created = SystemTime::now()
+    //     //     .duration_since(UNIX_EPOCH)
+    //     //     .unwrap()
+    //     //     .as_millis() as u64;
 
-        // let program_id = Uuid::new_v4();
-        // println!("  program id: {:?}", program_id);
-        // let program_path = format!("deployments/{program_id}.json");
-        // println!("  program path: {}", program_path);
-        // FilecoinDeployment
-        // let tempo = json!(groth_params);
-        let deployment = json!(FilecoinDeployment {
-            circuits: "this is the circuits string".to_owned(),
-            groth_params: "this is the groth params".to_owned() }).to_string();
-        // let program = format!("this is it");
-        println!("  deployment len: {}", deployment.len());
-        std::fs::write(deployment_file, deployment).unwrap();
-        // Ok(program_id.to_string())
-    }
+    //     // let program_id = Uuid::new_v4();
+    //     // println!("  program id: {:?}", program_id);
+    //     // let program_path = format!("deployments/{program_id}.json");
+    //     // println!("  program path: {}", program_path);
+    //     // FilecoinDeployment
+    //     // let tempo = json!(groth_params);
+    //     let deployment = json!(FilecoinDeployment {
+    //         circuits: "this is the circuits string".to_owned(),
+    //         groth_params: "this is the groth params".to_owned() }).to_string();
+    //     // let program = format!("this is it");
+    //     println!("  deployment len: {}", deployment.len());
+    //     std::fs::write(deployment_file, deployment).unwrap();
+    //     // Ok(program_id.to_string())
+    // }
 
     /// circuit_proof creates and synthesizes a circuit from concrete params/inputs, then generates a
     /// groth proof from it. It returns a groth proof.
@@ -275,7 +276,7 @@ where
         groth_params: &groth16::MappedParameters<Bls12>,
         priority: bool,
     ) -> Result<Vec<groth16::Proof<Bls12>>> {
-        println!("asdf: circuit_proofs");
+        info!("asdf: circuit_proofs");
         let mut rng = OsRng;
         ensure!(
             !vanilla_proofs.is_empty(),
@@ -296,67 +297,31 @@ where
             })
             .collect::<Result<Vec<_>>>()?;
 
-        println!("asdf: groth params param_file_path {:?}", groth_params.param_file_path);
-        println!("asdf: groth params params {:?}", groth_params.params);
-        println!("asdf: groth params vk {:?}", groth_params.vk);
-        // // println!("asdf: groth params pvk {:?}", groth_params.pvk);
-        println!("asdf: groth params h {:?}", groth_params.h.len());
-        println!("asdf: groth params l {:?}", groth_params.l.len());
-        println!("asdf: groth params a {:?}", groth_params.a.len());
-        println!("asdf: groth params b_g1 {:?}", groth_params.b_g1.len());
-        println!("asdf: groth params b_g2 {:?}", groth_params.b_g2.len());
-        println!("asdf: groth params h 0 {:?}", groth_params.h[0]);
-        println!("asdf: groth params l 0 {:?}", groth_params.l[0]);
-        println!("asdf: groth params a 0 {:?}", groth_params.a[0]);
-        println!("asdf: groth params b_g1 0 {:?}", groth_params.b_g1[0]);
-        println!("asdf: groth params b_g2 0 {:?}", groth_params.b_g2[0]);
-        println!("asdf: groth params checked {:?}", groth_params.checked);
-        println!("asdf: circuits len {:?}", circuits.len());
-
-    // /// The parameter file we're reading from.
-    // pub param_file_path: PathBuf,
-    // /// The file descriptor we have mmaped.
-    // pub param_file: File,
-    // /// The actual mmap.
-    // pub params: Mmap,
-
-    // /// This is always loaded (i.e. not lazily loaded).
-    // pub vk: VerifyingKey<E>,
-    // pub pvk: PreparedVerifyingKey<E>,
-
-    // /// Elements of the form ((tau^i * t(tau)) / delta) for i between 0 and
-    // /// m-2 inclusive. Never contains points at infinity.
-    // pub h: Vec<Range<usize>>,
-
-    // /// Elements of the form (beta * u_i(tau) + alpha v_i(tau) + w_i(tau)) / delta
-    // /// for all auxiliary inputs. Variables can never be unconstrained, so this
-    // /// never contains points at infinity.
-    // pub l: Vec<Range<usize>>,
-
-    // /// QAP "A" polynomials evaluated at tau in the Lagrange basis. Never contains
-    // /// points at infinity: polynomials that evaluate to zero are omitted from
-    // /// the CRS and the prover can deterministically skip their evaluation.
-    // pub a: Vec<Range<usize>>,
-
-    // /// QAP "B" polynomials evaluated at tau in the Lagrange basis. Needed in
-    // /// G1 and G2 for C/B queries, respectively. Never contains points at
-    // /// infinity for the same reason as the "A" polynomials.
-    // pub b_g1: Vec<Range<usize>>,
-    // pub b_g2: Vec<Range<usize>>,
-
-    // pub checked: bool,
-
-
+            info!("asdf: groth params param_file_path {:?}", groth_params.param_file_path);
+        // info!("asdf: groth params params {:?}", groth_params.params);
+        // info!("asdf: groth params vk {:?}", groth_params.vk);
+        // // info!("asdf: groth params pvk {:?}", groth_params.pvk);
+        info!("asdf: groth params h {:?}", groth_params.h.len());
+        info!("asdf: groth params l {:?}", groth_params.l.len());
+        info!("asdf: groth params a {:?}", groth_params.a.len());
+        info!("asdf: groth params b_g1 {:?}", groth_params.b_g1.len());
+        info!("asdf: groth params b_g2 {:?}", groth_params.b_g2.len());
+        info!("asdf: groth params h 0 {:?}", groth_params.h[0]);
+        info!("asdf: groth params l 0 {:?}", groth_params.l[0]);
+        info!("asdf: groth params a 0 {:?}", groth_params.a[0]);
+        info!("asdf: groth params b_g1 0 {:?}", groth_params.b_g1[0]);
+        info!("asdf: groth params b_g2 0 {:?}", groth_params.b_g2[0]);
+        info!("asdf: groth params checked {:?}", groth_params.checked);
+        info!("asdf: circuits len {:?}", circuits.len());
 
 
         let groth_proofs = if priority {
-            println!("asdf: go into bellperson land");
-            Self::write_to_file("fc-groth16-test.json", &circuits, &groth_params);
+            info!("asdf: go into bellperson land");
             create_random_proof_batch_in_priority(circuits, groth_params, &mut rng)?
         } else {
             create_random_proof_batch(circuits, groth_params, &mut rng)?
         };
-        println!("asdf: back from bellperson land");
+        info!("asdf: back from bellperson land");
 
 
         groth_proofs

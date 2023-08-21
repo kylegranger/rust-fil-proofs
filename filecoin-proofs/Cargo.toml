@@ -21,12 +21,12 @@ serde = { version = "1.0", features = ["rc", "derive"] }
 serde_json = "1.0"
 blake2b_simd = "1.0.0"
 
-bellperson = { path = "/home/ader/dev/ader/bellperson-0.25.0" }
+bellperson = "0.25.0"
 
 log = "0.4.7"
 rayon = "1.1.0"
 hex = "0.4.0"
-merkletree = { path = "/home/ader/dev/ader/merkletree-0.23.0" }
+merkletree = "0.23.0"
 bincode = "1.1.2"
 anyhow = "1.0.23"
 sha2 = "0.10.2"

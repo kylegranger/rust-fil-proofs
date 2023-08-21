@@ -161,7 +161,7 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     prover_id: ProverId,
 ) -> Result<SnarkProof> {
 
-    let do_read = false;
+    let do_read = true;
     if do_read {
         generate_winning_post_read(post_config, randomness, replicas, prover_id)
     } else {
@@ -267,7 +267,7 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
         pub_params: jpubparams,
         vanilla_proofs,
     };
-    write_to_file("fc-002.json", fil_proof_info);
+    write_to_file("fc-003.json", fil_proof_info);
    
     info!("generate_winning_post_write:finish");
 
@@ -283,7 +283,7 @@ pub fn generate_winning_post_read<Tree: 'static + MerkleTreeTrait>(
 ) -> Result<SnarkProof> {
     info!("generate_winning_post_read:start");
 
-    let fil_proof_info = read_from_file("fc-002.json");
+    let fil_proof_info = read_from_file("fc-003.json");
     let post_config: &PoStConfig = &serde_json::from_str(&fil_proof_info.post_config).unwrap();
 
     ensure!(

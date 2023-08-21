@@ -22,14 +22,14 @@ regex = "1.3.7"
 commandspec = "0.12.2"
 chrono = { version = "0.4.7", features = ["serde"] }
 memmap2 = "0.5.6"
-bellperson = { path = "/home/ader/dev/ader/bellperson-0.25.0" }
+bellperson = "0.25.0"
 rand = "0.8"
 tempfile = "3.0.8"
 cpu-time = "1.0.0"
 blake2s_simd = "1.0.0"
 fil_logger = "0.1.6"
 log = "0.4.8"
-merkletree = { path = "/home/ader/dev/ader/merkletree-0.23.0" }
+merkletree = "0.23.0"
 bincode = "1.1.2"
 anyhow = "1.0.23"
 rand_xorshift = "0.3.0"

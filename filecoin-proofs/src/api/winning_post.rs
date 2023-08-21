@@ -161,7 +161,7 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     prover_id: ProverId,
 ) -> Result<SnarkProof> {
 
-    let do_read = true;
+    let do_read = false;
     if do_read {
         generate_winning_post_read(post_config, randomness, replicas, prover_id)
     } else {
@@ -203,7 +203,6 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     };
     let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
         FallbackPoStCompound::setup(&setup_params)?;
-    println!("pub: pub_params {:?}", pub_params);
 
     let groth_params = get_post_params::<Tree>(post_config)?;
 
@@ -217,7 +216,6 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
                 })
         })
         .collect::<Result<Vec<_>>>()?;
-
 
     let mut pub_sectors = Vec::with_capacity(param_sector_count);
     let mut priv_sectors = Vec::with_capacity(param_sector_count);
@@ -253,7 +251,6 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
         sectors: &priv_sectors,
     };
 
-
     let jpubparams = json!(&pub_params).to_string();
     let jpubinputs = json!(&pub_inputs).to_string();
     let jpost_config = json!(&post_config).to_string();
@@ -286,10 +283,8 @@ pub fn generate_winning_post_read<Tree: 'static + MerkleTreeTrait>(
 ) -> Result<SnarkProof> {
     info!("generate_winning_post_read:start");
 
-
     let fil_proof_info = read_from_file("fc-002.json");
     let post_config: &PoStConfig = &serde_json::from_str(&fil_proof_info.post_config).unwrap();
-   
 
     ensure!(
         post_config.typ == PoStType::Winning,
@@ -301,89 +296,12 @@ pub fn generate_winning_post_read<Tree: 'static + MerkleTreeTrait>(
         "invalid amount of replicas" 
     );
 
-    // let randomness_safe: <Tree::Hasher as Hasher>::Domain =
-    //     as_safe_commitment(randomness, "randomness")?;
-    // let prover_id_safe: <Tree::Hasher as Hasher>::Domain =
-    //     as_safe_commitment(&prover_id, "prover_id")?;
-
-    // let vanilla_params = winning_post_setup_params(post_config)?;
-    // let param_sector_count = vanilla_params.sector_count;
-
-    // let setup_params = compound_proof::SetupParams {
-    //     vanilla_params,
-    //     partitions: None,
-    //     priority: post_config.priority,
-    // };
-    // let _pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
-    //     FallbackPoStCompound::setup(&setup_params)?;
-    // println!("pub: pub_params {:?}", _pub_params);
-    // let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> = serde_json::from_str(&fil_proof_info.pub_params).unwrap();
-    // println!("pub: _pub_params {:?}", pub_params);
-    // let jpost_config = json!(&post_config).to_string();
-    // let jprover_id = json!(&prover_id).to_string();
-    // info!("oranj:  jprover_id {:?}", jprover_id);
-
-
     let groth_params = get_post_params::<Tree>(post_config)?;
 
-    // let trees = replicas
-    //     .iter()
-    //     .map(|(sector_id, replica)| {
-    //         replica
-    //             .merkle_tree(post_config.sector_size)
-    //             .with_context(|| {
-    //                 format!("generate_winning_post: merkle_tree failed: {:?}", sector_id)
-    //             })
-    //     })
-    //     .collect::<Result<Vec<_>>>()?;
-
-
-    // let mut pub_sectors = Vec::with_capacity(param_sector_count);
-    // let mut priv_sectors = Vec::with_capacity(param_sector_count);
-
-    // for _ in 0..param_sector_count {
-    //     for ((sector_id, replica), tree) in replicas.iter().zip(trees.iter()) {
-    //         let comm_r = replica.safe_comm_r().with_context(|| {
-    //             format!("generate_winning_post: safe_comm_r failed: {:?}", sector_id)
-    //         })?;
-    //         let comm_c = replica.safe_comm_c();
-    //         let comm_r_last = replica.safe_comm_r_last();
-
-    //         pub_sectors.push(PublicSector::<<Tree::Hasher as Hasher>::Domain> {
-    //             id: *sector_id,
-    //             comm_r,
-    //         });
-    //         priv_sectors.push(PrivateSector {
-    //             tree,
-    //             comm_c,
-    //             comm_r_last,
-    //         });
-    //     }
-    // }
-
-    // let pub_inputs: fallback::PublicInputs<<<Tree as MerkleTreeTrait>::Hasher as Hasher>::Domain> = fallback::PublicInputs::<<Tree::Hasher as Hasher>::Domain> {
-    //     randomness: randomness_safe,
-    //     prover_id: prover_id_safe,
-    //     sectors: pub_sectors,
-    //     k: None,
-    // };
-
-    // let priv_inputs = fallback::PrivateInputs::<Tree> {
-    //     sectors: &priv_sectors,
-    // };
-
-
-    // let jpubparams = json!(&pub_params).to_string();
     let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> = serde_json::from_str(&fil_proof_info.pub_params).unwrap();
-    // let jpubinputs = json!(&pub_inputs).to_string();
-    // info!("oranj:  pub_params json {:?}", &jpubparams);
-    // info!("oranj:  pub_inputs json {:?}", &jpubinputs);
+
     let pub_inputs: fallback::PublicInputs<<<Tree as MerkleTreeTrait>::Hasher as Hasher>::Domain> = serde_json::from_str(&fil_proof_info.pub_inputs).unwrap();
-    // info!("pub:  pub_inputs  {:?}", &pub_inputs);
-    // info!("pub:  _pub_inputs  {:?}", &_pub_inputs);
-    // if trees.len() == 1 {
-    //     panic!("XXX-001");
-    // }
+
     let proof =
         FallbackPoStCompound::<Tree>::prove_with_vanilla_inputs(&pub_params, &pub_inputs, &fil_proof_info.vanilla_proofs, &groth_params)?;
     let proof = proof.to_vec()?;
@@ -391,8 +309,6 @@ pub fn generate_winning_post_read<Tree: 'static + MerkleTreeTrait>(
 
     println!("oranj:  proof_str {}", proof_str);
 
-
-   
     info!("generate_winning_post_read:finish");
 
     Ok(proof)

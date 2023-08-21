@@ -7,8 +7,36 @@ use fr32::{bytes_into_fr, fr_into_bytes};
 use merkletree::merkle::{get_merkle_tree_leafs, get_merkle_tree_len};
 use storage_proofs_core::merkle::{get_base_tree_count, MerkleTreeTrait};
 use typenum::Unsigned;
-
+use serde::{Deserialize, Serialize};
+use std::path::Path;
 use crate::types::{Commitment, SectorSize};
+use serde_json::json;
+
+#[derive(Default, Clone, Serialize, Deserialize, Debug)]
+pub struct FilProofInfo {
+    pub post_config: String,
+    pub pub_inputs: String,
+    pub pub_params: String,
+    pub vanilla_proofs: String,
+}
+
+
+pub fn write_to_file(deployment_file: impl AsRef<Path>, fil_proof_info: FilProofInfo) {
+    println!("write_to_file: {:?}", &deployment_file.as_ref().display());
+
+    let deployment = json!(fil_proof_info).to_string();
+
+    println!("  deployment len: {}", deployment.len());
+    std::fs::write(deployment_file, deployment).unwrap();
+
+}
+
+pub fn read_from_file(deployment_file: impl AsRef<Path>) -> FilProofInfo {
+    println!("read_from_file: {:?}", &deployment_file.as_ref().display());
+    let proofstr = std::fs::read_to_string(deployment_file).unwrap();
+    let fil_proof_info: FilProofInfo = serde_json::from_str(&proofstr).unwrap();
+    fil_proof_info
+}
 
 pub fn as_safe_commitment<H: Domain, T: AsRef<str>>(
     comm: &[u8; 32],

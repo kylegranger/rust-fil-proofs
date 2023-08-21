@@ -13,6 +13,9 @@ use storage_proofs_core::{
 use storage_proofs_post::fallback::{
     self, FallbackPoSt, FallbackPoStCompound, PrivateSector, PublicSector,
 };
+use crate::api::{write_to_file, read_from_file, FilProofInfo};
+use serde_json::json;
+use base64::{engine::general_purpose, Engine as _};
 
 use crate::{
     api::{
@@ -103,7 +106,21 @@ pub fn generate_window_post<Tree: 'static + MerkleTreeTrait>(
     replicas: &BTreeMap<SectorId, PrivateReplicaInfo<Tree>>,
     prover_id: ProverId,
 ) -> Result<SnarkProof> {
-    info!("generate_window_post:start");
+    let do_read = true;
+    if do_read {
+        generate_window_post_read(post_config, randomness, replicas, prover_id)
+    } else {
+        generate_window_post_write(post_config, randomness, replicas, prover_id)
+    }}
+
+/// Generates a Window proof-of-spacetime.
+pub fn generate_window_post_write<Tree: 'static + MerkleTreeTrait>(
+    post_config: &PoStConfig,
+    randomness: &ChallengeSeed,
+    replicas: &BTreeMap<SectorId, PrivateReplicaInfo<Tree>>,
+    prover_id: ProverId,
+) -> Result<SnarkProof> {
+    info!("generate_window_post_write:start");
     ensure!(
         post_config.typ == PoStType::Window,
         "invalid post config type"
@@ -124,7 +141,6 @@ pub fn generate_window_post<Tree: 'static + MerkleTreeTrait>(
 
     let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
         FallbackPoStCompound::setup(&setup_params)?;
-    let groth_params = get_post_params::<Tree>(post_config)?;
 
     let trees: Vec<_> = replicas
         .par_iter()
@@ -136,9 +152,6 @@ pub fn generate_window_post<Tree: 'static + MerkleTreeTrait>(
                 })
         })
         .collect::<Result<_>>()?;
-
-
-
 
     let mut pub_sectors = Vec::with_capacity(sector_count);
     let mut priv_sectors = Vec::with_capacity(sector_count);
@@ -172,11 +185,126 @@ pub fn generate_window_post<Tree: 'static + MerkleTreeTrait>(
         sectors: &priv_sectors,
     };
 
-    let (proof, _) = FallbackPoStCompound::prove(&pub_params, &pub_inputs, &priv_inputs, &groth_params)?;
+    let jpubparams = json!(&pub_params).to_string();
+    let jpubinputs = json!(&pub_inputs).to_string();
+    let jpost_config = json!(&post_config).to_string();
 
-    info!("generate_window_post:finish");
+    let vanilla_proofs =
+        FallbackPoStCompound::<Tree>::prove_return_vanilla_proofs(&pub_params, &pub_inputs, &priv_inputs)?;
 
-    proof.to_vec()
+    let fil_proof_info =  FilProofInfo {
+        post_config: jpost_config,
+        pub_inputs: jpubinputs,
+        pub_params: jpubparams,
+        vanilla_proofs,
+    };
+    write_to_file("window-post-001.json", fil_proof_info);
+   
+    info!("generate_winning_post_write:finish");
+    let dummy = [0 as u8; 192].to_vec();
+    Ok(dummy)
+
+
+    // let (proof, _) = FallbackPoStCompound::prove(&pub_params, &pub_inputs, &priv_inputs, &groth_params)?;
+
+    // info!("generate_window_post_write:finish");
+
+    // proof.to_vec()
+}
+
+/// Generates a Window proof-of-spacetime.
+pub fn generate_window_post_read<Tree: 'static + MerkleTreeTrait>(
+    _post_config: &PoStConfig,
+    _randomness: &ChallengeSeed,
+    _replicas: &BTreeMap<SectorId, PrivateReplicaInfo<Tree>>,
+    _prover_id: ProverId,
+) -> Result<SnarkProof> {
+    info!("generate_window_post_read:start");
+
+    let fil_proof_info = read_from_file("window-post-001.json");
+    let post_config: &PoStConfig = &serde_json::from_str(&fil_proof_info.post_config).unwrap();
+
+    ensure!(
+        post_config.typ == PoStType::Window,
+        "invalid post config type"
+    );
+
+    // let randomness_safe = as_safe_commitment(randomness, "randomness")?;
+    // let prover_id_safe = as_safe_commitment(&prover_id, "prover_id")?;
+
+    // let vanilla_params = window_post_setup_params(post_config);
+    // let partitions = get_partitions_for_window_post(replicas.len(), post_config);
+
+    // let sector_count = vanilla_params.sector_count;
+    // let setup_params = compound_proof::SetupParams {
+    //     vanilla_params,
+    //     partitions,
+    //     priority: post_config.priority,
+    // };
+
+    // let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
+    //     FallbackPoStCompound::setup(&setup_params)?;
+    let groth_params = get_post_params::<Tree>(post_config)?;
+
+    // let trees: Vec<_> = replicas
+    //     .par_iter()
+    //     .map(|(sector_id, replica)| {
+    //         replica
+    //             .merkle_tree(post_config.sector_size)
+    //             .with_context(|| {
+    //                 format!("generate_window_post: merkle_tree failed: {:?}", sector_id)
+    //             })
+    //     })
+    //     .collect::<Result<_>>()?;
+
+
+
+
+    // let mut pub_sectors = Vec::with_capacity(sector_count);
+    // let mut priv_sectors = Vec::with_capacity(sector_count);
+
+    // for ((sector_id, replica), tree) in replicas.iter().zip(trees.iter()) {
+    //     let comm_r = replica.safe_comm_r().with_context(|| {
+    //         format!("generate_window_post: safe_comm_r failed: {:?}", sector_id)
+    //     })?;
+    //     let comm_c = replica.safe_comm_c();
+    //     let comm_r_last = replica.safe_comm_r_last();
+
+    //     pub_sectors.push(PublicSector {
+    //         id: *sector_id,
+    //         comm_r,
+    //     });
+    //     priv_sectors.push(PrivateSector {
+    //         tree,
+    //         comm_c,
+    //         comm_r_last,
+    //     });
+    // }
+
+    // let pub_inputs = fallback::PublicInputs {
+    //     randomness: randomness_safe,
+    //     prover_id: prover_id_safe,
+    //     sectors: pub_sectors,
+    //     k: None,
+    // };
+
+    // let priv_inputs = fallback::PrivateInputs::<Tree> {
+    //     sectors: &priv_sectors,
+    // };
+    let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> = serde_json::from_str(&fil_proof_info.pub_params).unwrap();
+
+    let pub_inputs: fallback::PublicInputs<<<Tree as MerkleTreeTrait>::Hasher as Hasher>::Domain> = serde_json::from_str(&fil_proof_info.pub_inputs).unwrap();
+
+    let proof =
+        FallbackPoStCompound::<Tree>::prove_with_vanilla_inputs(&pub_params, &pub_inputs, &fil_proof_info.vanilla_proofs, &groth_params)?;
+    let proof = proof.to_vec()?;
+    let proof_str = general_purpose::STANDARD_NO_PAD.encode(&proof);
+
+    println!("oranj:  proof_str {}", proof_str);
+
+    info!("generate_winning_post_read:finish");
+
+    Ok(proof)
 }
 
 /// Verifies a window proof-of-spacetime.

@@ -1,8 +1,8 @@
 use anyhow::{ensure, Context, Result};
 use filecoin_hashers::Hasher;
 use log::info;
+use crate::api::{write_to_file, read_from_file, FilProofInfo};
 
-use serde::{Deserialize, Serialize};
 use base64::{engine::general_purpose, Engine as _};
 
 use storage_proofs_core::{
@@ -17,7 +17,7 @@ use storage_proofs_post::fallback::{
 };
 
 use serde_json::json;
-use std::path::Path;
+
 use crate::{
     api::{as_safe_commitment, partition_vanilla_proofs},
     caches::{get_post_params, get_post_verifying_key},
@@ -29,56 +29,6 @@ use crate::{
     PoStType,
 };
 
-#[derive(Default, Clone, Serialize, Deserialize, Debug)]
-pub struct FilProofInfo {
-    pub post_config: String,
-    pub pub_inputs: String,
-    pub pub_params: String,
-    pub vanilla_proofs: String,
-}
-
-#[derive(Default, Clone, Serialize, Deserialize, Debug)]
-pub struct FilecoinDeployment {
-    pub circuits: String,
-    pub groth_params: String,
-}
-
-
-/// Utilities
-// pub fn serialize_tree<E: Element, A: Algorithm<E>, S: Store<E>, U: Unsigned>(
-//     tree: MerkleTree<E, A, S, U>,
-// ) -> Vec<u8> {
-//     let data = tree.data().expect("can't get tree's data [serialize_tree]");
-//     let data: Vec<E> = data
-//         .read_range(0..data.len())
-//         .expect("can't read actual data [serialize_tree]");
-//     let mut serialized_tree = vec![0u8; E::byte_len() * data.len()];
-//     let mut start = 0;
-//     let mut end = E::byte_len();
-//     for element in data {
-//         element.copy_to_slice(&mut serialized_tree[start..end]);
-//         start += E::byte_len();
-//         end += E::byte_len();
-//     }
-//     serialized_tree
-// }
-
-fn write_to_file(deployment_file: impl AsRef<Path>, fil_proof_info: FilProofInfo) {
-    println!("write_to_file: {:?}", &deployment_file.as_ref().display());
-
-    let deployment = json!(fil_proof_info).to_string();
-
-    println!("  deployment len: {}", deployment.len());
-    std::fs::write(deployment_file, deployment).unwrap();
-
-}
-
-fn read_from_file(deployment_file: impl AsRef<Path>) -> FilProofInfo {
-    println!("read_from_file: {:?}", &deployment_file.as_ref().display());
-    let proofstr = std::fs::read_to_string(deployment_file).unwrap();
-    let fil_proof_info: FilProofInfo = serde_json::from_str(&proofstr).unwrap();
-    fil_proof_info
-}
 
 /// Generates a Winning proof-of-spacetime with provided vanilla proofs.
 pub fn generate_winning_post_with_vanilla<Tree: 'static + MerkleTreeTrait>(
@@ -255,9 +205,6 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
 
     let vanilla_proofs =
         FallbackPoStCompound::<Tree>::prove_return_vanilla_proofs(&pub_params, &pub_inputs, &priv_inputs)?;
-    // let proof = proof.to_vec()?;
-    // let proof_str = general_purpose::STANDARD_NO_PAD.encode(&proof);
-    // println!("oranj:  proof_str {}", proof_str);
 
     let fil_proof_info =  FilProofInfo {
         post_config: jpost_config,

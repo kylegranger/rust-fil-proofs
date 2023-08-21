@@ -296,33 +296,6 @@ where
         Ok(res)
     }
 
-
-    // fn write_to_file(deployment_file: impl AsRef<Path>, circuits: &Vec<C>, groth_params: &MappedParameters<Bls12>) {
-    //     // println!("write_to_file: {:?}", &circuit_file.as_ref().display());
-    //     // let file = std::fs::read(circuit_file).map_err(|_| GevulotError::ErrorIo)?;
-    //     // println!("  read in {} bytes", file.len());
-    //     // let r1cs = general_purpose::STANDARD_NO_PAD.encode(&file);
-
-    //     // let created = SystemTime::now()
-    //     //     .duration_since(UNIX_EPOCH)
-    //     //     .unwrap()
-    //     //     .as_millis() as u64;
-
-    //     // let program_id = Uuid::new_v4();
-    //     // println!("  program id: {:?}", program_id);
-    //     // let program_path = format!("deployments/{program_id}.json");
-    //     // println!("  program path: {}", program_path);
-    //     // FilecoinDeployment
-    //     // let tempo = json!(groth_params);
-    //     let deployment = json!(FilecoinDeployment {
-    //         circuits: "this is the circuits string".to_owned(),
-    //         groth_params: "this is the groth params".to_owned() }).to_string();
-    //     // let program = format!("this is it");
-    //     println!("  deployment len: {}", deployment.len());
-    //     std::fs::write(deployment_file, deployment).unwrap();
-    //     // Ok(program_id.to_string())
-    // }
-
     /// circuit_proof creates and synthesizes a circuit from concrete params/inputs, then generates a
     /// groth proof from it. It returns a groth proof.
     /// circuit_proof is used internally and should neither be called nor implemented outside of

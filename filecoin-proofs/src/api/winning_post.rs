@@ -65,26 +65,19 @@ pub struct FilecoinDeployment {
 
 fn write_to_file(deployment_file: impl AsRef<Path>, fil_proof_info: FilProofInfo) {
     println!("write_to_file: {:?}", &deployment_file.as_ref().display());
-    // let file = std::fs::read(circuit_file).map_err(|_| GevulotError::ErrorIo)?;
-    // println!("  read in {} bytes", file.len());
-    // let r1cs = general_purpose::STANDARD_NO_PAD.encode(&file);
 
-    // let created = SystemTime::now()
-    //     .duration_since(UNIX_EPOCH)
-    //     .unwrap()
-    //     .as_millis() as u64;
-
-    // let program_id = Uuid::new_v4();
-    // println!("  program id: {:?}", program_id);
-    // let program_path = format!("deployments/{program_id}.json");
-    // println!("  program path: {}", program_path);
-    // FilecoinDeployment
-    // let tempo = json!(groth_params);
     let deployment = json!(fil_proof_info).to_string();
-    // let program = format!("this is it");
+
     println!("  deployment len: {}", deployment.len());
     std::fs::write(deployment_file, deployment).unwrap();
-    // Ok(program_id.to_string())
+
+}
+
+fn read_from_file(deployment_file: impl AsRef<Path>) -> FilProofInfo {
+    println!("read_from_file: {:?}", &deployment_file.as_ref().display());
+    let proofstr = std::fs::read_to_string(deployment_file).unwrap();
+    let fil_proof_info: FilProofInfo = serde_json::from_str(&proofstr).unwrap();
+    fil_proof_info
 }
 
 /// Generates a Winning proof-of-spacetime with provided vanilla proofs.
@@ -162,7 +155,7 @@ pub fn generate_winning_post_with_vanilla<Tree: 'static + MerkleTreeTrait>(
 
 /// Generates a Winning proof-of-spacetime.
 pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
-    post_config: &PoStConfig,
+    _post_config: &PoStConfig,
     randomness: &ChallengeSeed,
     replicas: &[(SectorId, PrivateReplicaInfo<Tree>)],
     prover_id: ProverId,
@@ -170,9 +163,18 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     info!("generate_winning_post:start");
     info!("asdf: replicas.len {}", replicas.len());
     info!("asdf: replicas {:?}", replicas);
-    info!("asdf: post_config {:?}", post_config);
+    // info!("asdf: post_config {:?}", post_config);
 
-
+    // let fil_proof_info =  FilProofInfo {
+    //     post_config: jpost_config,
+    //     pub_inputs: jpubinputs,
+    //     pub_params: jpubparams,
+    //     vanilla_proofs,
+    // };
+    let fil_proof_info = read_from_file("fc-groth16-seri.json");
+    info!("loaded: fil_proof_info {:?}", fil_proof_info);
+    let post_config: &PoStConfig = &serde_json::from_str(&fil_proof_info.post_config).unwrap();
+   
 
     ensure!(
         post_config.typ == PoStType::Winning,
@@ -197,9 +199,11 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
         partitions: None,
         priority: post_config.priority,
     };
-    let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
+    let _pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
         FallbackPoStCompound::setup(&setup_params)?;
-
+    println!("pub: pub_params {:?}", _pub_params);
+    let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> = serde_json::from_str(&fil_proof_info.pub_params).unwrap();
+    println!("pub: _pub_params {:?}", pub_params);
     let jpost_config = json!(&post_config).to_string();
     // let jprover_id = json!(&prover_id).to_string();
     // info!("oranj:  jprover_id {:?}", jprover_id);
@@ -259,7 +263,7 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     //     start += E::byte_len();
     //     end += E::byte_len();
     // }
-    let pub_inputs = fallback::PublicInputs::<<Tree::Hasher as Hasher>::Domain> {
+    let pub_inputs: fallback::PublicInputs<<<Tree as MerkleTreeTrait>::Hasher as Hasher>::Domain> = fallback::PublicInputs::<<Tree::Hasher as Hasher>::Domain> {
         randomness: randomness_safe,
         prover_id: prover_id_safe,
         sectors: pub_sectors,
@@ -272,9 +276,13 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
 
 
     let jpubparams = json!(&pub_params).to_string();
+    // let pub_params: compound_proof::PublicParams<'a, FallbackPoSt<'a, Tree>> = serde_json::from_str(&fil_proof_info.pub_inputs).unwrap();
     let jpubinputs = json!(&pub_inputs).to_string();
     info!("oranj:  pub_params json {:?}", &jpubparams);
     info!("oranj:  pub_inputs json {:?}", &jpubinputs);
+    let _pub_inputs: fallback::PublicInputs<<<Tree as MerkleTreeTrait>::Hasher as Hasher>::Domain> = serde_json::from_str(&jpubinputs).unwrap();
+    info!("pub:  pub_inputs  {:?}", &pub_inputs);
+    info!("pub:  _pub_inputs  {:?}", &_pub_inputs);
     // if trees.len() == 1 {
     //     panic!("XXX-001");
     // }
@@ -285,13 +293,13 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     // info!("oranj:  returned vanilla_proofs {:?}", &vanilla_proofs);
     println!("oranj:  proof_str {}", proof_str);
 
-    let fil_proof_info =  FilProofInfo {
-        post_config: jpost_config,
-        pub_inputs: jpubinputs,
-        pub_params: jpubparams,
-        vanilla_proofs,
-    };
-    write_to_file("fc-groth16-seri.json", fil_proof_info);
+    // let fil_proof_info =  FilProofInfo {
+    //     post_config: jpost_config,
+    //     pub_inputs: jpubinputs,
+    //     pub_params: jpubparams,
+    //     vanilla_proofs,
+    // };
+    // write_to_file("fc-groth16-seri.json", fil_proof_info);
    
     info!("generate_winning_post:finish");
 

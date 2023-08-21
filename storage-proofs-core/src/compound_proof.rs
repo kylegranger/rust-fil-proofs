@@ -15,7 +15,7 @@ use log::info;
 
 
 use serde_json::json;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use rand::{rngs::OsRng, RngCore};
 use rayon::prelude::{
     IndexedParallelIterator, IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
@@ -39,7 +39,7 @@ pub struct SetupParams<'a, S: ProofScheme<'a>> {
 
 
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PublicParams<'a, S: ProofScheme<'a>> {
     pub vanilla_params: S::PublicParams,
     pub partitions: Option<usize>,

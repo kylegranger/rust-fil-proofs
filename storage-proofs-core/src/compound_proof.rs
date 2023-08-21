@@ -121,6 +121,27 @@ where
     }
 
     /// prove is equivalent to ProofScheme::prove.
+    fn prove_return_vanilla_proofs<'b>(
+        pub_params: &PublicParams<'a, S>,
+        pub_in: &S::PublicInputs,
+        priv_in: &S::PrivateInputs,
+    ) -> Result<String> {
+        let partition_count = Self::partition_count(pub_params);
+        info!("asdf: prove, in compound_proof.rs");
+
+        // This will always run at least once, since there cannot be zero partitions.
+        ensure!(partition_count > 0, "There must be partitions");
+
+        info!("vanilla_proofs:start");
+        let vanilla_proofs =
+            S::prove_all_partitions(&pub_params.vanilla_params, pub_in, priv_in, partition_count)?;
+
+        let jvanilla_proofs = json!(&vanilla_proofs).to_string();
+        info!("vanilla_proofs:finish");
+        Ok(jvanilla_proofs)
+    }
+
+    /// prove is equivalent to ProofScheme::prove.
     fn prove_with_vanilla_inputs<'b>(
         pub_params: &PublicParams<'a, S>,
         pub_in: &S::PublicInputs,

@@ -204,8 +204,6 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     let pub_params: compound_proof::PublicParams<'_, FallbackPoSt<'_, Tree>> =
         FallbackPoStCompound::setup(&setup_params)?;
 
-    let groth_params = get_post_params::<Tree>(post_config)?;
-
     let trees = replicas
         .iter()
         .map(|(sector_id, replica)| {
@@ -255,11 +253,11 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     let jpubinputs = json!(&pub_inputs).to_string();
     let jpost_config = json!(&post_config).to_string();
 
-    let (proof, vanilla_proofs) =
-        FallbackPoStCompound::<Tree>::prove(&pub_params, &pub_inputs, &priv_inputs, &groth_params)?;
-    let proof = proof.to_vec()?;
-    let proof_str = general_purpose::STANDARD_NO_PAD.encode(&proof);
-    println!("oranj:  proof_str {}", proof_str);
+    let vanilla_proofs =
+        FallbackPoStCompound::<Tree>::prove_return_vanilla_proofs(&pub_params, &pub_inputs, &priv_inputs)?;
+    // let proof = proof.to_vec()?;
+    // let proof_str = general_purpose::STANDARD_NO_PAD.encode(&proof);
+    // println!("oranj:  proof_str {}", proof_str);
 
     let fil_proof_info =  FilProofInfo {
         post_config: jpost_config,
@@ -270,8 +268,8 @@ pub fn generate_winning_post<Tree: 'static + MerkleTreeTrait>(
     write_to_file("fc-003.json", fil_proof_info);
    
     info!("generate_winning_post_write:finish");
-
-    Ok(proof)
+    let dummy = [0 as u8; 192].to_vec();
+    Ok(dummy)
 }
 
 /// Generates a Winning proof-of-spacetime.

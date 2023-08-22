@@ -18,6 +18,8 @@ pub struct FilProofInfo {
     pub pub_inputs: String,
     pub pub_params: String,
     pub vanilla_proofs: String,
+    pub proof: String,
+    pub partitions: Option<usize>,
 }
 
 
